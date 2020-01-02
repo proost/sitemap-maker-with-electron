@@ -11,19 +11,24 @@ ipcRenderer.on('receiveFile', (event, msg) => {
   let textMsg = ''
   fileCheckAlert.className = ''
   switch (msg) {
-    case 'alert-warning':
+    case 'no-sheet':
       fileCheckAlert.classList.add('alert', 'alert-warning')
       textMsg = '엑셀에 해당 Sheet가 없어요!'
       isLoadFile = false
       break
-    case 'alert-success':
+    case 'read-success':
       fileCheckAlert.classList.add('alert', 'alert-success')
       textMsg = '확인 완료!'
       isLoadFile = true
       break
-    case 'alert-danger':
+    case 'not-excel-file':
       fileCheckAlert.classList.add('alert', 'alert-danger')
       textMsg = '해당 파일은 엑셀 파일이 아닙니다!'
+      isLoadFile = false
+      break
+    case 'incorrect-data-format':
+      fileCheckAlert.classList.add('alert', 'alert-warning')
+      textMsg = '엑셀에 데이터 포맷이 잘못되었습니다.'
       isLoadFile = false
       break
     default:
@@ -40,14 +45,23 @@ ipcRenderer.on('changeProgressBar', (event, changeAmount) => {
   let progressBar = document.getElementsByClassName('progress-bar')[0]
   currentProgressAmount += changeAmount
   progressBar.style.width = `${currentProgressAmount}%`
-  event.reply('changeOkay')
 })
 
-ipcRenderer.on('raiseFileMakeError', (event, arg) => {
-  let msg = document.getElementById('result-file-error')
-  msg.classList.add('alert', 'alert-danger')
-  msg.innerText = '파일 생성에 에러가 있습니다.'
-  $('#result-file-error').alert()
+ipcRenderer.on('endProcessMsg', (event, msg) => {
+  let tag = document.getElementById('end-process-msg')
+  switch (msg) {
+    case 'error':
+      tag.classList.add('alert', 'alert-danger')
+      tag.innerText = '파일 생성에 에러가 있습니다.'
+      break
+    case 'success':
+      tag.classList.add('alert', 'alert-success')
+      tag.innerText = '파일이 정상적으로 생성되었습니다. 폴더를 확인해주세요.'
+      break
+    default:
+      console.log('impossible')
+  }
+  $('#end-process-msg').alert()
 })
 
 function onFileOpen() {
