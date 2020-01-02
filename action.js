@@ -16,11 +16,6 @@ ipcRenderer.on('receiveFile', (event, msg) => {
       textMsg = '엑셀에 해당 Sheet가 없어요!'
       isLoadFile = false
       break
-    case 'read-success':
-      fileCheckAlert.classList.add('alert', 'alert-success')
-      textMsg = '확인 완료!'
-      isLoadFile = true
-      break
     case 'not-excel-file':
       fileCheckAlert.classList.add('alert', 'alert-danger')
       textMsg = '해당 파일은 엑셀 파일이 아닙니다!'
@@ -32,9 +27,15 @@ ipcRenderer.on('receiveFile', (event, msg) => {
       isLoadFile = false
       break
     default:
-      fileCheckAlert.classList.add('alert', 'alert-danger')
-      textMsg = '오류가 발생하였습니다'
-      isLoadFile = false
+      if ( msg.includes(':') ) {
+        fileCheckAlert.classList.add('alert', 'alert-success')
+        textMsg = msg
+        isLoadFile = true
+      } else {
+        fileCheckAlert.classList.add('alert', 'alert-danger')
+        textMsg = '오류가 발생하였습니다'
+        isLoadFile = false
+      }
   }
   
   fileCheckAlert.innerText = textMsg
@@ -47,8 +48,8 @@ ipcRenderer.on('changeProgressBar', (event, changeAmount) => {
   progressBar.style.width = `${currentProgressAmount}%`
 })
 
-ipcRenderer.on('endProcessMsg', (event, msg) => {
-  let tag = document.getElementById('end-process-msg')
+ipcRenderer.on('processMsg', (event, msg) => {
+  let tag = document.getElementById('process-msg')
   switch (msg) {
     case 'error':
       tag.classList.add('alert', 'alert-danger')

@@ -22,7 +22,6 @@ function createWindow() {
   });
   
   mainWindow.loadURL(`file://${__dirname}/index.html`)
-
 }
 
 ipcMain.on('openFile', (event, arg) => {
@@ -50,10 +49,13 @@ function readFile(filePath) {
       return 'incorrect-data-format'
     }
     // read file
+    let msg = '확인된 사이트:\n'
     for(let i=0; i<rowObj.length; i++) {
-      siteList.push(rowObj[i]["사이트 주소"])
+      let site = rowObj[i]["사이트 주소"]
+      msg += site + '\n'
+      siteList.push(site)
     }
-    return 'read-success'
+    return msg
   } else {
     return 'not-excel-file'
   }
@@ -87,7 +89,7 @@ async function collectSites(mainUrl) {
     if (htmlText !== null) {
       let tagObjectArr = parseHtml(htmlText)
       for(let i=0; i<tagObjectArr.length; i++) {
-        let tempList = Array.from(shakeOffSites(tagObjectArr[i], mainUrl))
+        let tempList = shakeOffSites(tagObjectArr[i], mainUrl)
         siteMap[mainUrl] = siteMap[mainUrl].concat(tempList) 
       }
     }
@@ -113,12 +115,12 @@ function parseHtml(htmlText) {
 }
 
 function shakeOffSites(tagObject, mainUrl) {
-  let tempList = new Set()
+  let tempList = []
   for(let key in tagObject) {
     let hrefAttribute = tagObject[key]['attribs']
     if (hrefAttribute !== undefined) {
       if (hrefAttribute.href !== undefined && hrefAttribute.href.startsWith('/')) {
-        tempList.add(mainUrl + hrefAttribute.href)
+        tempList.push(mainUrl + hrefAttribute.href)
       }
     }
   }
@@ -145,10 +147,16 @@ function endProgress() {
   isEnd = true
   clearInterval(timer)
   for(let mainUrl in siteMap) {
+    removeDuplicatedUrl(mainUrl)
     const xml = buildXml(mainUrl)
     saveFile(mainUrl, xml)
   }
-  mainWindow.webContents.send('endProcessMsg', 'success')
+  mainWindow.webContents.send('processMsg', 'success')
+}
+
+function removeDuplicatedUrl(mainUrl) {
+  let tempSet = new Set(siteMap[mainUrl])
+  siteMap[mainUrl] = Array.from(tempSet)
 }
 
 function buildXml(mainUrl) {
@@ -184,7 +192,7 @@ function saveFile(mainUrl, xml) {
   const fileName = nameFile(mainUrl)
   fs.writeFile(`./sitemap/${fileName}.xml`, xml, (error) => {
     if (error) {
-      mainWindow.webContents.send('endProcessMsg', 'error')
+      mainWindow.webContents.send('processMsg', 'error')
     }
   })
 }
